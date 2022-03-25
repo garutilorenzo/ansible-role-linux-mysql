@@ -1,0 +1,13 @@
+---
+
+- name: add mysql group 
+  ansible.builtin.group:
+    name: "{{ mysql_group }}"
+    state: present
+
+- name: add mysql user
+  ansible.builtin.user:
+    name: "{{ mysql_user }}"
+    shell: /bin/false
+    password: "!"
+    group: "{{ mysql_group }}"

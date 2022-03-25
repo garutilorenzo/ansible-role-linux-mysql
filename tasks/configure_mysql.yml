@@ -1,0 +1,84 @@
+---
+
+- set_fact:
+    mysql_ip_address: "{{ ip_idx }}"
+  when: "ip_idx | ipaddr( mysql_subnet )"
+  with_items: "{{ ansible_all_ipv4_addresses }}"
+  loop_control:
+    loop_var: ip_idx
+
+- set_fact:
+    mysql_server_auto_id: "{{  mysql_ip_address.split('.')[-1] }}"
+    
+- set_fact:
+    mysql_server_id: "{% if hostvars[inventory_hostname]['mysql_manual_server_id'] is defined %}{{ hostvars[inventory_hostname]['mysql_manual_server_id'] }}{% else %}{{mysql_server_auto_id}}{% endif %}"
+
+- name: 'set fact: list gr_seeds'
+  set_fact:
+    gr_seeds: >-
+      {{ groups['mysql']  | join(':33061,') }}:33061
+
+- set_fact:
+    mysql_bootstrap: "{% if mysql_bootstrap_host is defined and  mysql_bootstrap_host == inventory_hostname %}yes{% else %}no{% endif %}"
+
+- name: Copy conf.d/mysql.cnf
+  ansible.builtin.copy:
+    src: mysql/conf.d/mysql.cnf
+    dest: "{{ mysql_conf_dir }}/conf.d/mysql.cnf"
+    owner: "{{ mysql_user }}"
+    group: "{{ mysql_group }}"
+    mode: 0400
+
+- name: render mysql.cnf
+  ansible.builtin.template:
+    src: mysql/mysql.cnf.j2
+    dest: "{{ mysql_conf_dir }}/mysql.cnf"
+    mode: 0400
+    owner: "{{ mysql_user }}"
+    group: "{{ mysql_group }}"
+
+- name: render my.cnf.fallback
+  ansible.builtin.template:
+    src: mysql/my.cnf.fallback.j2
+    dest: "{{ mysql_conf_dir }}/my.cnf.fallback"
+    mode: 0400
+    owner: "{{ mysql_user }}"
+    group: "{{ mysql_group }}"
+
+- name: render mysql.conf.d/mysqld.cnf
+  ansible.builtin.template:
+    src: mysql/mysql.conf.d/mysqld.cnf.j2
+    dest: "{{ mysql_conf_dir }}/mysql.conf.d/mysqld.cnf"
+    mode: 0400
+    owner: "{{ mysql_user }}"
+    group: "{{ mysql_group }}"
+
+- name: render mysql.conf.d/gtid.cnf
+  ansible.builtin.template:
+    src: mysql/mysql.conf.d/gtid.cnf.j2
+    dest: "{{ mysql_conf_dir }}/mysql.conf.d/gtid.cnf"
+    mode: 0400
+    owner: "{{ mysql_user }}"
+    group: "{{ mysql_group }}"
+  when: mysql_replication_mode == 'GTID' or mysql_replication_mode == 'InnoDB Cluster'
+
+- ansible.builtin.fail:
+    msg: MySQL group replication name not specified
+  when:
+    - mysql_gr_name == ''
+    - mysql_replication_mode == 'InnoDB Cluster'
+
+- ansible.builtin.fail:
+    msg: MySQL group replication view change uuid not specified
+  when:
+    - mysql_gr_name == ''
+    - mysql_replication_mode == 'InnoDB Cluster'
+    
+- name: render innodb_cluster.cnf
+  ansible.builtin.template:
+    src: mysql/mysql.conf.d/innodb_cluster.cnf.j2
+    dest: "{{ mysql_conf_dir }}/mysql.conf.d/innodb_cluster.cnf"
+    mode: 0400
+    owner: "{{ mysql_user }}"
+    group: "{{ mysql_group }}"
+  when: not mysql_init or mysql_replication_mode == 'InnoDB Cluster'

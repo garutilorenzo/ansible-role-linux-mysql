@@ -1,0 +1,163 @@
+---
+
+- name: disable ufw
+  ansible.builtin.systemd:
+    name: ufw 
+    state: stopped 
+    enabled: no
+  when: disable_firewall
+
+- name: Configure MySQL community repo
+  ansible.builtin.apt:
+    deb: "{{ mysql_repo_url[ansible_os_family] }}"
+    state: present
+
+- name: Populate service facts
+  ansible.builtin.service_facts:
+
+- name: Set fact mysql service status
+  ansible.builtin.set_fact:
+    mysql_service_status: "{{ ansible_facts.services[mysql_service_name[ansible_os_family]].state | default('inactive') }}"
+
+- name: Install MySQL utils
+  ansible.builtin.package:
+    name: 
+      - mysql-shell
+    state: present
+    update_cache: yes
+
+- name: copy innodb_cluster_cli.py util
+  ansible.builtin.copy:
+    src: innodb_cluster_cli.py
+    dest: /usr/local/sbin/innodb_cluster_cli.py
+    mode: 0400
+    owner: "{{ mysql_user }}"
+    group: "{{ mysql_group }}"
+
+- name: Check if mysql data dir exist
+  ansible.builtin.stat:
+    path: "{{ mysql_data_dir }}/auto.cnf"
+  register: mysql_auto_cnf
+
+- block: 
+    - name: Install MySQL
+      ansible.builtin.package:
+        name: 
+          - mysql-community-server
+        state: present
+        update_cache: yes
+
+    - name: stop mysql
+      ansible.builtin.systemd:
+        name: "{{ mysql_service_name[ansible_os_family] }}" 
+        state: stopped 
+        enabled: yes
+
+    - name: Cleanup
+      ansible.builtin.file:
+        path: "{{ clean_idx }}"
+        state: absent
+      loop:
+        - /etc/my.cnf 
+        - /var/log/mysqld.log
+      loop_control:
+        loop_var: clean_idx
+
+    - name: Setup mysql directories
+      ansible.builtin.file:
+        path: "{{ dir_idx }}"
+        state: directory
+        owner: "{{ mysql_user }}"
+        group: "{{ mysql_group }}"
+        mode: 0750
+      loop:
+        - "{{ mysql_data_dir }}"
+        - "{{ mysql_log_dir }}"
+        - "{{ mysql_conf_dir }}"
+        - "{{ mysql_conf_dir }}/conf.d"
+        - "{{ mysql_conf_dir }}/mysql.conf.d"
+        - "{{ mysql_pid_dir }}"
+      loop_control:
+        loop_var: dir_idx
+
+    - name: Clean MySQL data dir
+      file:
+        state: absent
+        path: "{{ mysql_data_dir }}"
+
+    - name: Copy mysql_init.sh
+      ansible.builtin.template:
+        src: mysql_init.sh.j2
+        dest: /usr/local/sbin/mysql_init.sh
+        owner: root
+        group: root
+        mode: '0700'
+    
+    - ansible.builtin.fail:
+        msg: MySQL root password was not set
+      when:  mysql_root_pw == ''
+
+    - name: Render mysql.service
+      ansible.builtin.template:
+        src: mysql.service.j2
+        dest: /etc/systemd/system/mysql.service
+        mode: 0644
+      notify:
+        - reload systemd
+
+    - name: reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: yes
+    
+    - include_tasks: 
+        file: configure_mysql.yml
+      vars:
+        mysql_init: yes
+    
+    - name: create my.cnf alternative
+      community.general.alternatives:
+        name: my.cnf
+        link: "{{ mysql_conf_dir }}/my.cnf"
+        path: "{{ mysql_conf_dir }}/mysql.cnf"
+    
+    - name: Create symbolic link to my.cnf
+      ansible.builtin.file:
+        src: /etc/alternatives/my.cnf
+        dest: "{{ mysql_conf_dir }}/my.cnf"
+        state: link
+
+    - name: Run mysql_init.sh
+      ansible.builtin.shell: /usr/local/sbin/mysql_init.sh mysqld >> /var/log/mysql_init.log
+      environment:
+        MYSQL_ROOT_PASSWORD: "{{ mysql_root_pw | mandatory }}"
+        REPLICA_USER: "{{ mysql_replica_user }}"
+        REPLICA_PASSWORD: "{{ mysql_replica_password }}"
+        OPERATOR_USER: "{{ mysql_operator_user }}"
+        OPERATOR_PASSWORD: "{{ mysql_operator_password }}"
+
+    - name: start mysql
+      ansible.builtin.systemd:
+        name: "{{ mysql_service_name[ansible_os_family] }}" 
+        state: started 
+        enabled: yes
+
+    - ansible.builtin.command: >
+        mysqlsh --py -f /usr/local/sbin/innodb_cluster_cli.py status_localhost --user {{ mysql_operator_user }} --password {{ mysql_operator_password }}
+      register: cluster_status
+      when: mysql_replication_mode == 'InnoDB Cluster'
+   
+    - include_tasks: 
+        file: setup_innodb_cluster.yml
+      when:
+        - mysql_replication_mode == 'InnoDB Cluster' 
+        - cluster_status.stdout == ''
+
+  when: 
+    - mysql_service_status != 'running'
+    - mysql_auto_cnf.stat.exists is defined 
+    - mysql_auto_cnf.stat.exists == False
+
+- include_tasks: 
+    file: configure_mysql.yml
+  vars:
+    mysql_init: no

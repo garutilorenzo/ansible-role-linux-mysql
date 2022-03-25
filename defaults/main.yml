@@ -1,0 +1,29 @@
+---
+
+disable_firewall: no
+disable_selinux: no
+mysql_resolv_mode: dns
+mysql_subnet: 192.168.25.0/24
+mysql_listen_all_interfaces: no
+
+mysql_group: mysql
+mysql_user: mysql
+
+mysql_data_dir: /var/lib/mysql
+mysql_log_dir:  /var/log/mysql
+mysql_conf_dir: /etc/mysql
+mysql_pid_dir: /var/run/mysqld
+
+mysql_root_pw: ''
+mysql_authentication: mysql_native_password
+mysql_operator_user: operator
+mysql_operator_password: Op3r4torMyPw
+mysql_replica_user: replica
+mysql_replica_password: rEpL1c4p4Sw0,rd
+
+mysql_replication_mode: '' # InnoDB Cluster, GTID, Empty/None (default)
+
+# Required params if mysql_replication_mode is set to 'InnoDB Cluster'
+mysql_gr_name: ''
+mysql_gr_vcu: ''
+mysql_innodb_cluster_name: '' 

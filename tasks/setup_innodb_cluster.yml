@@ -1,0 +1,75 @@
+---
+
+- set_fact:
+    mysql_ip_address: "{{ item }}"
+  when: "item | ipaddr( mysql_subnet )"
+  with_items: "{{ ansible_all_ipv4_addresses }}"
+
+- name: 'set fact: list gr_seeds'
+  set_fact:
+    gr_seeds: >-
+      {{ groups['mysql']  | join(':33061,') }}:33061
+
+- set_fact:
+    mysql_server_auto_id: "{{  mysql_ip_address.split('.')[-1] }}"
+
+- set_fact:
+    mysql_server_id: "{% if hostvars[inventory_hostname]['mysql_manual_server_id'] is defined %}{{ hostvars[inventory_hostname]['mysql_manual_server_id'] }}{% else %}{{mysql_server_auto_id}}{% endif %}"
+
+- set_fact:
+    mysql_bootstrap: "{% if mysql_bootstrap_host is defined and  mysql_bootstrap_host == inventory_hostname %}yes{% else %}no{% endif %}"
+
+- ansible.builtin.fail:
+    msg: MySQL group replication name not specified
+  when: mysql_gr_name == ''
+
+- ansible.builtin.fail:
+    msg: MySQL group replication view change uuid not specified
+  when: mysql_gr_vcu == ''
+
+- ansible.builtin.command: mysql -Ap{{ mysql_root_pw }} -e "RESET MASTER;"
+- ansible.builtin.command: mysql -Ap{{ mysql_root_pw }} -e "CHANGE MASTER TO MASTER_USER='{{ mysql_replica_user }}', MASTER_PASSWORD='{{ mysql_replica_password }}' FOR CHANNEL 'group_replication_recovery';"
+
+- name: render innodb_cluster.cnf
+  ansible.builtin.template:
+    src: mysql/mysql.conf.d/innodb_cluster.cnf.j2
+    dest: "{{ mysql_conf_dir }}/mysql.conf.d/innodb_cluster.cnf"
+    mode: 0400
+    owner: "{{ mysql_user }}"
+    group: "{{ mysql_group }}"
+
+- name: restart mysql
+  ansible.builtin.systemd:
+    name: "{{ mysql_service_name[ansible_os_family] }}"  
+    state: restarted 
+    enabled: yes
+
+- name: Wait for mysql to be ready
+  wait_for:
+    port: 3306
+    host: "{{ mysql_ip_address }}"
+    sleep: 5
+    delay: 1
+
+- ansible.builtin.fail:
+    msg: mysql_innodb_cluster_name not specified
+  when: mysql_innodb_cluster_name == ''
+
+- ansible.builtin.command: >
+    mysqlsh --py -f /usr/local/sbin/innodb_cluster_cli.py init --cluster {{ mysql_innodb_cluster_name }} --user {{ mysql_operator_user }} --password {{ mysql_operator_password }}
+  register: cluster_output
+  when: mysql_bootstrap
+
+- ansible.builtin.command: >
+    mysqlsh --py -f /usr/local/sbin/innodb_cluster_cli.py find_cluster_members --cluster {{ mysql_innodb_cluster_name }} --servers {{ groups['mysql'] | join(',') }} --user {{ mysql_operator_user }} --password {{ mysql_operator_password }}
+  register: mysql_server_list_result
+  when: not mysql_bootstrap
+
+- set_fact:
+    mysql_server_list: "{{ mysql_server_list_result.stdout }}"
+  when: not mysql_bootstrap
+
+- ansible.builtin.command: >
+    mysqlsh --py -f /usr/local/sbin/innodb_cluster_cli.py setup --cluster {{ mysql_innodb_cluster_name }} --servers {{ mysql_server_list }} --user {{ mysql_operator_user }} --password {{ mysql_operator_password }}
+  register: cluster_output
+  when: not mysql_bootstrap

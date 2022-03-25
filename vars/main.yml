@@ -1,0 +1,11 @@
+---
+
+mysql_repo_url:
+  RedHat_8: https://dev.mysql.com/get/mysql80-community-release-el8-3.noarch.rpm
+  Fedora_35: https://dev.mysql.com/get/mysql80-community-release-fc35-2.noarch.rpm
+  Fedora_34: https://dev.mysql.com/get/mysql80-community-release-fc34-3.noarch.rpm
+  Debian: https://dev.mysql.com/get/mysql-apt-config_0.8.22-1_all.deb
+
+mysql_service_name:
+  Debian: mysql.service
+  RedHat: mysqld.service

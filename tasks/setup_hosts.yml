@@ -1,0 +1,14 @@
+---
+
+- set_fact:
+    mysql_ip_address: "{{ item }}"
+  when: "item | ipaddr( mysql_subnet )"
+  with_items: "{{ ansible_all_ipv4_addresses }}"
+
+- name: Generate /etc/hosts
+  ansible.builtin.template:
+    src: hosts.j2
+    dest: /etc/hosts
+    owner: root
+    group: root
+    mode: 0644

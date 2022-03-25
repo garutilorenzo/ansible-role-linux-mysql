@@ -1,0 +1,22 @@
+---
+
+- include_tasks: 
+    file: preflight.yml
+
+- include_tasks: 
+    file: setup_user.yml
+
+- include_tasks: 
+    file: setup_hosts.yml
+    apply:
+      tags: mysql_hosts
+  tags: mysql_hosts
+  when: mysql_resolv_mode == 'hosts'
+
+- include_tasks: 
+    file: "{{ item }}"
+    apply:
+      tags: mysql_install
+  with_first_found:
+    - "install_{{ ansible_os_family }}.yml"
+  tags: mysql_install

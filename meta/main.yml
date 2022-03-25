@@ -1,0 +1,13 @@
+---
+dependencies: []
+
+galaxy_info:
+  description: 'Setup MySQL, MySQL InnoDB Cluster'
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+    - name: Fedora
+      versions:
+        - all
+  galaxy_tags: []

@@ -1,0 +1,17 @@
+## WARNING Autogenerted file
+## Please don't edit, remove this file
+
+[mysqld]
+
+plugin_load_add='group_replication.so'
+group_replication_group_name="{{ mysql_gr_name }}"
+group_replication_view_change_uuid="{{ mysql_gr_vcu }}"
+group_replication_start_on_boot=on
+group_replication_local_address="{{ mysql_ip_address }}:33061"
+{% if mysql_bootstrap %}
+group_replication_bootstrap_group=on
+group_replication_group_seeds=""
+{% else %}
+group_replication_bootstrap_group=off
+group_replication_group_seeds={{ gr_seeds }}
+{% endif %}
