@@ -81,4 +81,4 @@
     mode: 0400
     owner: "{{ mysql_user }}"
     group: "{{ mysql_group }}"
-  when: not mysql_init or mysql_replication_mode == 'InnoDB Cluster'
+  when: not mysql_init

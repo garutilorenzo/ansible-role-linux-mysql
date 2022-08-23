@@ -28,12 +28,9 @@ skip_replica_start
 transaction_isolation = 'READ-COMMITTED'
 
 binlog_checksum = NONE
-relay_log_info_repository = TABLE
-transaction_write_set_extraction = XXHASH64
 
 auto_increment_increment = 1
 auto_increment_offset = 2
 
 binlog_transaction_dependency_tracking = WRITESET 
-replica_parallel_type = LOGICAL_CLOCK
 replica_preserve_commit_order = ON

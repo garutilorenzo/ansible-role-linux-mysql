@@ -1,9 +1,11 @@
 ---
 
 - set_fact:
-    mysql_ip_address: "{{ item }}"
-  when: "item | ipaddr( mysql_subnet )"
+    mysql_ip_address: "{{ ip_idx }}"
+  when: "ip_idx | ipaddr( mysql_subnet )"
   with_items: "{{ ansible_all_ipv4_addresses }}"
+  loop_control:
+    loop_var: ip_idx
 
 - name: 'set fact: list gr_seeds'
   set_fact:
@@ -44,12 +46,24 @@
     state: restarted 
     enabled: yes
 
-- name: Wait for mysql to be ready
+- name: Wait for mysql TCP to be ready
   wait_for:
     port: 3306
     host: "{{ mysql_ip_address }}"
     sleep: 5
     delay: 1
+
+- set_fact:
+    mysql_server_nr: "{{ groups['mysql'] | length }}"
+
+- name: Wait for GR setup and propagation
+  ansible.builtin.command: >
+    mysql -A -u root -p{{ mysql_root_pw }} -Nse "select count(*) from performance_schema.replication_group_members where member_state='ONLINE';"
+  retries: 50
+  delay: 2
+  register: mysql_result
+  until: mysql_result.stdout == mysql_server_nr
+  when:  mysql_replication_mode == 'InnoDB Cluster'
 
 - ansible.builtin.fail:
     msg: mysql_innodb_cluster_name not specified

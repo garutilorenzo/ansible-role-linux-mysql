@@ -54,10 +54,7 @@ def cluster_exist(cluster_name):
     return is_cluster_exist
 
 def create_cluster(cluster_name):
-    try:
-        create_cluster_result = dba.create_cluster(cluster_name, {'adoptFromGR': True})
-    except Exception as e:
-        create_cluster_result = None
+    create_cluster_result = dba.create_cluster(cluster_name, {'adoptFromGR': True})
     return create_cluster_result
 
 def parse_all_nodes(cluster, cluster_status):
