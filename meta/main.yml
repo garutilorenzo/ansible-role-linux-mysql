@@ -6,8 +6,17 @@ galaxy_info:
   platforms:
     - name: Ubuntu
       versions:
-        - all
+        - jammy
+        - focal
     - name: Fedora
       versions:
-        - all
-  galaxy_tags: []
+        - 35
+  galaxy_tags:
+    - mysql
+    - innodb-cluster
+    - innodb
+    - mysql-replication
+    - mysql-ha
+    - cluster
+    - multinode
+    - infrastructure
