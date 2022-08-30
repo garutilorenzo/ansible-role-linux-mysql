@@ -323,17 +323,7 @@ Please provide the password for 'root@localhost': ******************************
 Save password for 'root@localhost'? [Y]es/[N]o/Ne[v]er (default No): 
 MySQL Shell 8.0.30
 
-Copyright (c) 2016, 2022, Oracle and/or its affiliates.
-Oracle is a registered trademark of Oracle Corporation and/or its affiliates.
-Other names may be trademarks of their respective owners.
-
-Type '\help' or '\?' for help; '\quit' to exit.
-Creating a session to 'root@localhost'
-Fetching schema names for autocompletion... Press ^C to stop.
-Your MySQL connection id is 794 (X protocol)
-Server version: 8.0.30 MySQL Community Server - GPL
-No default schema selected; type \use <schema> to set one.
- MySQL  localhost:33060+ ssl  JS > \sql
+MySQL  localhost:33060+ ssl  JS > \sql # <- SWITCH TO SQL MODE
 Switching to SQL mode... Commands end with ;
 
 create database wordpress;
@@ -666,19 +656,9 @@ Please provide the password for 'root@localhost': ******************************
 Save password for 'root@localhost'? [Y]es/[N]o/Ne[v]er (default No): 
 MySQL Shell 8.0.30
 
-Copyright (c) 2016, 2022, Oracle and/or its affiliates.
-Oracle is a registered trademark of Oracle Corporation and/or its affiliates.
-Other names may be trademarks of their respective owners.
-
-Type '\help' or '\?' for help; '\quit' to exit.
-Creating a session to 'root@localhost'
-Fetching schema names for autocompletion... Press ^C to stop.
-Your MySQL connection id is 852 (X protocol)
-Server version: 8.0.30 MySQL Community Server - GPL
-No default schema selected; type \use <schema> to set one.
- MySQL  localhost:33060+ ssl  JS > \sql
+MySQL  localhost:33060+ ssl  JS > \sql # <- SWITCH TO SQL MODE
 Switching to SQL mode... Commands end with ;
- MySQL  localhost:33060+ ssl  SQL > start group_replication;
+MySQL  localhost:33060+ ssl  SQL > start group_replication;
 Query OK, 0 rows affected (1.7095 sec)
 ```
 
