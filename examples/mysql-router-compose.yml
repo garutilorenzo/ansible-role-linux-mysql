@@ -1,0 +1,37 @@
+version: '3.4'
+services:
+  wordpress:
+    image: wordpress:latest
+    ports:
+      - 80:80
+    restart: always
+    environment:
+      - WORDPRESS_DB_HOST=mysqlrouter:6446
+      - WORDPRESS_DB_USER=wordpress
+      - WORDPRESS_DB_PASSWORD=wordpress
+      - WORDPRESS_DB_NAME=wordpress
+
+  mysqlrouter:
+    image: garutilorenzo/mysqlrouter:8.0.30
+    volumes:
+      - type: volume
+        source: mysqlrouter
+        target: /app/mysqlrouter/
+        volume:
+          nocopy: true
+    environment:
+     - MYSQL_HOST=my-ubuntu-0
+     - MYSQL_PORT=3306
+     - MYSQL_USER=root
+     - MYSQL_PASSWORD=<CHANGE_ME> # <- the same password in the vars.yml file
+     - MYSQL_ROUTER_ACCOUNT=mysql_router_user
+     - MYSQL_ROUTER_PASSWORD=<CHANGE_ME> # <- openssl rand -base64 32 | sed 's/=//'
+    extra_hosts:
+      my-ubuntu-0: 192.168.25.110
+      my-ubuntu-1: 192.168.25.111
+      my-ubuntu-2: 192.168.25.112
+      my-ubuntu-3: 192.168.25.113
+      my-ubuntu-4: 192.168.25.114
+
+volumes:
+ mysqlrouter:

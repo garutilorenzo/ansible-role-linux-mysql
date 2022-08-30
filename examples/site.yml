@@ -1,0 +1,8 @@
+---
+- hosts: mysql
+  become: yes
+  remote_user: vagrant
+  roles: 
+    - role: ansible-role-linux-mysql
+  vars_files:
+    - vars.yml
