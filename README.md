@@ -315,7 +315,7 @@ To run this test you have to install [Docker](https://docs.docker.com/get-docker
 
 #### User and Database creation
 
-We need to create on db and one user for wordpress, to do this we have to find the primary server (checl the cluster status and find the node with -> "mode": "R/W")
+We need to create on db and one user for wordpress, to do this we have to find the primary server (check the cluster status and find the node with -> "mode": "R/W")
 
 ```
 mysqlsh root@localhost
