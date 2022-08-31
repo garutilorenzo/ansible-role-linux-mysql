@@ -9,6 +9,7 @@ This role will install and configure MySQL server or MySQL in HA mode using [MyS
 
 ## Table of Contents
 
+* [Role Variables](#role-variables)
 * [Vagrant up, build the test infrastructure](#vagrant-up-build-the-test-infrastructure)
 * [Ansible setup and pre-flight check](#ansible-setup-and-pre-flight-check)
 * [Deploy MySQL InnoDB Cluster ](#deploy-mysql-innodb-cluster)
@@ -16,12 +17,40 @@ This role will install and configure MySQL server or MySQL in HA mode using [MyS
 * [Restore from complete outage](#restore-from-complete-outage)
 * [Clean up](#clean-up)
 
+### Role Variables
+
+This role accept this variables:
+
+| Var   | Required |  Default | Desc |
+| ------- | ------- | ----------- |  ----------- |
+| `mysql_subnet`       | `yes`       |  `192.168.25.0/24` | Subnet where MySQL will be listen. If the VM or bare metal server has more than one interface, Ansible will filter the interface and MySQL wil listen only on a specific interface. This variable is also used to calculate the MySQL server ID. |
+| `mysql_root_pw`       | `yes`       | ``       | MySQL root password.   |
+| `mysql_authentication`       | `no`       | `mysql_native_password`       | MySQL authentication method.   |
+| `disable_firewall`       | `no`       | `no`       | If set to yes Ansible will disable the firewall.   |
+| `disable_selinux`        | `no`       | `no`       | Disable SELinux. Default no, if you want to configure SELinux use another Role. You can disable SELinux setting this variable to yes  |
+| `resolv_mode`  | `no` | `dns`       | How MySQL resolve the names, default dns. If set to *host* the /etc/hosts file will be overwritten  |
+| `mysql_listen_all_interfaces`  | `no` | `no`       | Set this variable to yes to allow MySQL to listen on all interfaces 0.0.0.0/0. Otherwise the listen ip address will be retrieved using *mysql_subnet* variable  |
+| `mysql_user`    | `no` |      | `mysql`       | MySQL system user  |
+| `mysql_group`   | `no` |      | `mysql`       | Group of the MySQL search system user  |
+| `mysql_data_dir`   | `no` |      | `/var/lib/mysql`       | MySQL data dir  |
+| `mysql_log_dir`   | `no` |      | `/var/log/mysql`       | MySQL log dir  |
+| `mysql_conf_dir`   | `no` |      | `/etc/mysql`       | MySQL conf dir  |
+| `mysql_pid_dir`   | `no` |      | `/var/run/mysqld`       | MySQL pid dir  |
+| `mysql_operator_user`   | `no` |      | `operator`       | MySQL operator user, used to bootstrap MySQL InnoDB Cluster. |
+| `mysql_operator_password`   | `no` |      | `Op3r4torMyPw`       | Password of operator user  |
+| `mysql_replica_user`   | `no` |      | `replica`       | MySQL replica user. Used for all the replica operations  |
+| `mysql_replica_password`   | `no` |      | `rEpL1c4p4Sw0,rd`       | Password of replica user  |
+| `mysql_replication_mode`       | `no`       | ``       |  [InnoDB Cluster](https://dev.mysql.com/doc/refman/8.0/en/mysql-innodb-cluster-introduction.html), [GTID](https://dev.mysql.com/doc/mysql-replication-excerpt/5.6/en/replication-gtids.html), Empty/None (default) |
+
+| `mysql_gr_name`   | `no` |      | ``       | Required if *mysql_replication_mode* is set to *InnoDB Cluster*. UUID of the Group Replication |
+| `mysql_gr_vcu`   | `no` |      | ``       | Required if *mysql_replication_mode* is set to *InnoDB Cluster*. Group Replication [view change uuid](https://dev.mysql.com/doc/refman/8.0/en/group-replication-options.html#sysvar_group_replication_view_change_uuid)  |
+| `mysql_innodb_cluster_name`   | `no` |      | ``       | Required if *mysql_replication_mode* is set to *InnoDB Cluster*. The name of MySQL InnoDB Cluster |
 
 ### Vagrant up, build the test infrastructure
 
-To test this collection we use [Vagrant](https://www.vagrantup.com/) and [Virtualbox](https://www.virtualbox.org/), but if you prefer you can also use your own VMs or your baremetal machines.
+To test this role we use [Vagrant](https://www.vagrantup.com/) and [Virtualbox](https://www.virtualbox.org/), but if you prefer you can also use your own VMs or your baremetal machines.
 
-The first step is to download this [repo](https://github.com/garutilorenzo/ansible-role-linux-mysql/) and birng up all the VMs. But first in the Vagrantfile paste your public ssh key in the *CHANGE_ME* variable. You can also adjust the number of the vm deployed by changing the NNODES variable (in this exaple we will use 5 nodes). Now we are ready to provision the machines:
+The first step is to download this repo and birng up all the VMs. But first in the Vagrantfile paste your public ssh key in the *CHANGE_ME* variable. You can also adjust the number of the vm deployed by changing the NNODES variable (in this exaple we will use 5 nodes). Now we are ready to provision the machines:
 
 ```
 git clone https://github.com/garutilorenzo/ansible-role-linux-mysql.git
@@ -217,26 +246,14 @@ my-ubuntu-3               : ok=30   changed=0    unreachable=0    failed=0    sk
 my-ubuntu-4               : ok=30   changed=0    unreachable=0    failed=0    skipped=18   rescued=0    ignored=0   
 ```
 
+In this guide mysqlsh is used to make operations on MySQL InnoDB Cluster. [Here](https://dev.mysql.com/doc/mysql-shell/8.0/en/) you can find more information about mysqlsh.
+
 Now we can finally check our cluster:
 
 ```
 root@my-ubuntu-0:~# mysqlsh root@my-ubuntu-0
 Please provide the password for 'root@my-ubuntu-0': ******************************************
-Save password for 'root@my-ubuntu-0'? [Y]es/[N]o/Ne[v]er (default No): 
-MySQL Shell 8.0.30
-
-Copyright (c) 2016, 2022, Oracle and/or its affiliates.
-Oracle is a registered trademark of Oracle Corporation and/or its affiliates.
-Other names may be trademarks of their respective owners.
-
-Type '\help' or '\?' for help; '\quit' to exit.
-Creating a session to 'root@my-ubuntu-0'
-Fetching schema names for autocompletion... Press ^C to stop.
-Your MySQL connection id is 75 (X protocol)
-Server version: 8.0.30 MySQL Community Server - GPL
-No default schema selected; type \use <schema> to set one.
 MySQL  localhost:33060+ ssl  JS > clu = dba.getCluster()
-<Cluster:cluster_lab>
 MySQL  localhost:33060+ ssl  JS > clu.status()
 {
     "clusterName": "cluster_lab", 
@@ -309,25 +326,23 @@ MySQL  localhost:33060+ ssl  JS > clu.status()
 To test the cluster we can use a sample Docker compose stack, the example uses:
 
 * Wordpress as frontend
-* [mysqlrouter](https://github.com/garutilorenzo/mysqlrouter) to connect Wordpress to Mysql Innodb cluster
+* [mysqlrouter](https://github.com/garutilorenzo/mysqlrouter) will connect WP to MySQL
 
 To run this test you have to install [Docker](https://docs.docker.com/get-docker/) and [Docker compose](https://docs.docker.com/compose/install/).
 
 #### User and Database creation
 
-We need to create on db and one user for wordpress, to do this we have to find the primary server (check the cluster status and find the node with -> "mode": "R/W")
+We need to create one db and one user for wordpress, to do this we have to find the primary server (check the cluster status and find the node with -> "mode": "R/W")
 
 ```
-mysqlsh root@localhost
+root@my-ubuntu-0:~# mysqlsh root@localhost
 Please provide the password for 'root@localhost': ******************************************
-Save password for 'root@localhost'? [Y]es/[N]o/Ne[v]er (default No): 
-MySQL Shell 8.0.30
 
 MySQL  localhost:33060+ ssl  JS > \sql # <- SWITCH TO SQL MODE
 Switching to SQL mode... Commands end with ;
 
 create database wordpress;
-create user 'wordpress'@'%' identified with 'wordpress';
+create user 'wordpress'@'%' identified by 'wordpress';
 grant all on wordpress.* TO 'wordpress'@'%';
 flush privileges;
 ```
@@ -448,7 +463,17 @@ Install and configure WP, and now we are ready for some [Chaos Monkey](https://n
 
 #### Simulate disaster
 
-We can now shutdown the RW node (in this case my-ubuntu-0):
+To test WP reachability we can start this simple test:
+
+
+```
+while true; do curl -s -o /dev/null -w "%{http_code}" http://localhost; echo; sleep 1; done
+200
+200
+
+```
+
+now shutdown the RW node (in this case my-ubuntu-0):
 
 ```
 root@my-ubuntu-0:~# sudo halt -p
@@ -456,28 +481,25 @@ Connection to 192.168.25.110 closed by remote host.
 Connection to 192.168.25.110 closed.
 ```
 
+and check the output of the test script:
+
+```
+while true; do curl -s -o /dev/null -w "%{http_code}" http://localhost; echo; sleep 1; done
+200
+500 # <- my-ubuntu-0 shutdown and MySQL primary switch
+200
+200
+
+```
+
 Now we check the cluster status from the second node, and we see that the cluster is still *ONLINE* and can tolerate one more failure:
 
 ```
 root@my-ubuntu-1:~# mysqlsh root@localhost
+Please provide the password for 'root@localhost': ******************************************
 
-Save password for 'root@localhost'? [Y]es/[N]o/Ne[v]er (default No): 
-MySQL Shell 8.0.30
-
-Copyright (c) 2016, 2022, Oracle and/or its affiliates.
-Oracle is a registered trademark of Oracle Corporation and/or its affiliates.
-Other names may be trademarks of their respective owners.
-
-Type '\help' or '\?' for help; '\quit' to exit.
-Creating a session to 'root@localhost'
-Fetching schema names for autocompletion... Press ^C to stop.
-Your MySQL connection id is 2897 (X protocol)
-Server version: 8.0.30 MySQL Community Server - GPL
-No default schema selected; type \use <schema> to set one.
-
- MySQL  localhost:33060+ ssl  JS > clu = dba.getCluster()
-<Cluster:cluster_lab>
- MySQL  localhost:33060+ ssl  JS > clu.status()
+MySQL  localhost:33060+ ssl  JS > clu = dba.getCluster()
+MySQL  localhost:33060+ ssl  JS > clu.status()
 {
     "clusterName": "cluster_lab", 
     "defaultReplicaSet": {
@@ -549,20 +571,7 @@ Now if we bring up again the *my-ubuntu-0* node, the node wil rejoin the cluster
 
 ```
 root@my-ubuntu-1:~# mysqlsh root@localhost
-
-Save password for 'root@localhost'? [Y]es/[N]o/Ne[v]er (default No): 
-MySQL Shell 8.0.30
-
-Copyright (c) 2016, 2022, Oracle and/or its affiliates.
-Oracle is a registered trademark of Oracle Corporation and/or its affiliates.
-Other names may be trademarks of their respective owners.
-
-Type '\help' or '\?' for help; '\quit' to exit.
-Creating a session to 'root@localhost'
-Fetching schema names for autocompletion... Press ^C to stop.
-Your MySQL connection id is 2897 (X protocol)
-Server version: 8.0.30 MySQL Community Server - GPL
-No default schema selected; type \use <schema> to set one.
+Please provide the password for 'root@localhost': ******************************************
 
 MySQL  localhost:33060+ ssl  JS > clu = dba.getCluster()
 MySQL  localhost:33060+ ssl  JS > clu.status()
@@ -639,7 +648,7 @@ If for any reason all the servers went down, the cluster has to be restored from
 To do this we have to connect to one instance, edit /etc/mysql/mysql.conf.d/innodb_cluster.cnf and set *group_replication_bootstrap_group* to *ON* and comment *group_replication_group_seeds*. We have now to restart MySQL:
 
 ```
-vagrant@my-ubuntu-0:~$ mysqlsh root@localhost
+vagrant@my-ubuntu-0:~$
 vi /etc/mysql/mysql.conf.d/innodb_cluster.cnf
 
 group_replication_bootstrap_group=on
@@ -653,8 +662,6 @@ For all the other (four) members we have to start the group replication:
 ```
 vagrant@my-ubuntu-4:~$ mysqlsh root@localhost
 Please provide the password for 'root@localhost': ******************************************
-Save password for 'root@localhost'? [Y]es/[N]o/Ne[v]er (default No): 
-MySQL Shell 8.0.30
 
 MySQL  localhost:33060+ ssl  JS > \sql # <- SWITCH TO SQL MODE
 Switching to SQL mode... Commands end with ;
@@ -665,11 +672,10 @@ Query OK, 0 rows affected (1.7095 sec)
 If the traffic on the cluster was low or absent the cluster will be ONLINE:
 
 ```
- MySQL  localhost:33060+ ssl  SQL > \js
+MySQL  localhost:33060+ ssl  SQL > \js
 Switching to JavaScript mode...
- MySQL  localhost:33060+ ssl  JS > clu = dba.getCluster()
-<Cluster:cluster_lab>
- MySQL  localhost:33060+ ssl  JS > clu.status()
+MySQL  localhost:33060+ ssl  JS > clu = dba.getCluster()
+MySQL  localhost:33060+ ssl  JS > clu.status()
 {
     "clusterName": "cluster_lab", 
     "defaultReplicaSet": {
@@ -736,10 +742,9 @@ Switching to JavaScript mode...
 }
 ```
 
-If the cluster has a high volume traffic at the moment of the complete outage you have to probably run form mysqlsh:
+If the cluster has a high volume traffic at the moment of the [complete outage](https://dev.mysql.com/doc/mysql-shell/8.0/en/troubleshooting-innodb-cluster.html). you have to probably run form mysqlsh:
 
 ```
-MySQL  localhost:33060+ ssl  JS > clu = dba.getCluster()
 MySQL  localhost:33060+ ssl  JS > var clu = dba.rebootClusterFromCompleteOutage();
 ```
 
