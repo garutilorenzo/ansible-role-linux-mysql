@@ -2,7 +2,7 @@
 dependencies: []
 
 galaxy_info:
-  description: 'Setup MySQL, MySQL InnoDB Cluster'
+  description: 'Install and configure MySQL Server and MySQL InnoDB Cluster'
   platforms:
     - name: Ubuntu
       versions:
