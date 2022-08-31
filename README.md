@@ -30,17 +30,17 @@ This role accept this variables:
 | `disable_selinux`        | `no`       | `no`       | Disable SELinux. Default no, if you want to configure SELinux use another Role. You can disable SELinux setting this variable to yes  |
 | `resolv_mode`  | `no` | `dns`       | How MySQL resolve the names, default dns. If set to *host* the /etc/hosts file will be overwritten  |
 | `mysql_listen_all_interfaces`  | `no` | `no`       | Set this variable to yes to allow MySQL to listen on all interfaces 0.0.0.0/0. Otherwise the listen ip address will be retrieved using *mysql_subnet* variable  |
-| `mysql_user`    | `no` |      | `mysql`       | MySQL system user  |
-| `mysql_group`   | `no` |      | `mysql`       | Group of the MySQL search system user  |
-| `mysql_data_dir`   | `no` |      | `/var/lib/mysql`       | MySQL data dir  |
-| `mysql_log_dir`   | `no` |      | `/var/log/mysql`       | MySQL log dir  |
-| `mysql_conf_dir`   | `no` |      | `/etc/mysql`       | MySQL conf dir  |
-| `mysql_pid_dir`   | `no` |      | `/var/run/mysqld`       | MySQL pid dir  |
-| `mysql_operator_user`   | `no` |      | `operator`       | MySQL operator user, used to bootstrap MySQL InnoDB Cluster. |
-| `mysql_operator_password`   | `no` |      | `Op3r4torMyPw`       | Password of operator user  |
-| `mysql_replica_user`   | `no` |      | `replica`       | MySQL replica user. Used for all the replica operations  |
-| `mysql_replica_password`   | `no` |      | `rEpL1c4p4Sw0,rd`       | Password of replica user  |
-| `mysql_replication_mode`       | `no`       | ``       |  [InnoDB Cluster](https://dev.mysql.com/doc/refman/8.0/en/mysql-innodb-cluster-introduction.html), [GTID](https://dev.mysql.com/doc/mysql-replication-excerpt/5.6/en/replication-gtids.html), Empty/None (default) |
+| `mysql_user`      | `no` |    `mysql`       | MySQL system user  |
+| `mysql_group`     | `no` |    `mysql`       | Group of the MySQL search system user  |
+| `mysql_data_dir`  | `no` | `/var/lib/mysql`       | MySQL data dir  |
+| `mysql_log_dir`   | `no` |  `/var/log/mysql`       | MySQL log dir  |
+| `mysql_conf_dir`  | `no` | `/etc/mysql`       | MySQL conf dir  |
+| `mysql_pid_dir`   | `no` |  `/var/run/mysqld`       | MySQL pid dir  |
+| `mysql_operator_user`   | `no` | `operator`       | MySQL operator user, used to bootstrap MySQL InnoDB Cluster. |
+| `mysql_operator_password`   | `no` | `Op3r4torMyPw`       | Password of operator user  |
+| `mysql_replica_user`   | `no` | `replica`       | MySQL replica user. Used for all the replica operations  |
+| `mysql_replica_password`   | `no`  | `rEpL1c4p4Sw0,rd`       | Password of replica user  |
+| `mysql_replication_mode`   | `no`  | ``       |  [InnoDB Cluster](https://dev.mysql.com/doc/refman/8.0/en/mysql-innodb-cluster-introduction.html), [GTID](https://dev.mysql.com/doc/mysql-replication-excerpt/5.6/en/replication-gtids.html), Empty/None (default) |
 
 | `mysql_gr_name`   | `no` |      | ``       | Required if *mysql_replication_mode* is set to *InnoDB Cluster*. UUID of the Group Replication |
 | `mysql_gr_vcu`   | `no` |      | ``       | Required if *mysql_replication_mode* is set to *InnoDB Cluster*. Group Replication [view change uuid](https://dev.mysql.com/doc/refman/8.0/en/group-replication-options.html#sysvar_group_replication_view_change_uuid)  |
