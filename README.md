@@ -41,10 +41,9 @@ This role accept this variables:
 | `mysql_replica_user`   | `no` | `replica`       | MySQL replica user. Used for all the replica operations  |
 | `mysql_replica_password`   | `no`  | `rEpL1c4p4Sw0,rd`       | Password of replica user  |
 | `mysql_replication_mode`   | `no`  | ``       |  [InnoDB Cluster](https://dev.mysql.com/doc/refman/8.0/en/mysql-innodb-cluster-introduction.html), [GTID](https://dev.mysql.com/doc/mysql-replication-excerpt/5.6/en/replication-gtids.html), Empty/None (default) |
-
-| `mysql_gr_name`   | `no` |      | ``       | Required if *mysql_replication_mode* is set to *InnoDB Cluster*. UUID of the Group Replication |
-| `mysql_gr_vcu`   | `no` |      | ``       | Required if *mysql_replication_mode* is set to *InnoDB Cluster*. Group Replication [view change uuid](https://dev.mysql.com/doc/refman/8.0/en/group-replication-options.html#sysvar_group_replication_view_change_uuid)  |
-| `mysql_innodb_cluster_name`   | `no` |      | ``       | Required if *mysql_replication_mode* is set to *InnoDB Cluster*. The name of MySQL InnoDB Cluster |
+| `mysql_gr_name`   | `no`    | ``       | Required if *mysql_replication_mode* is set to *InnoDB Cluster*. UUID of the Group Replication |
+| `mysql_gr_vcu`    | `no`    | ``       | Required if *mysql_replication_mode* is set to *InnoDB Cluster*. Group Replication [view change uuid](https://dev.mysql.com/doc/refman/8.0/en/group-replication-options.html#sysvar_group_replication_view_change_uuid)  |
+| `mysql_innodb_cluster_name`   | `no`   | ``       | Required if *mysql_replication_mode* is set to *InnoDB Cluster*. The name of MySQL InnoDB Cluster |
 
 ### Vagrant up, build the test infrastructure
 
