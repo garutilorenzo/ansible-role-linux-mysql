@@ -1,0 +1,15 @@
+- name: Download MySQL GPG ASCII keys if not already installed
+  ansible.builtin.get_url:
+    url: "{{ item.url }}"
+    dest: "/etc/apt/trusted.gpg.d/{{ item.name }}.asc"
+    mode: '0644'
+  loop: "{{ mysql_gpg_keys }}"
+  when: not lookup('file', '/etc/apt/trusted.gpg.d/{{ item.name }}.gpg', errors='ignore')
+
+- name: Convert ASCII key to binary .gpg format
+  ansible.builtin.command: >
+    gpg --dearmor /etc/apt/trusted.gpg.d/{{ item.name }}.asc
+    --output /etc/apt/trusted.gpg.d/{{ item.name }}.gpg
+  args:
+    creates: "/etc/apt/trusted.gpg.d/{{ item.name }}.gpg"
+  loop: "{{ mysql_gpg_keys }}"
